@@ -1,0 +1,10 @@
+[workspace]
+
+members = [
+    "caemu",
+    "caemu-6809",
+    "caemu-misc",
+    "caemu-mo5",
+    "caemu-components",
+    "caemu-testboard",
+]
