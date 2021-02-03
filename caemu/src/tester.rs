@@ -1,4 +1,8 @@
-use crate::board::{CompleteBoard, Component, Signal, Bus, Delay, In, Out};
+use crate::board::{Board, CompleteBoard};
+use crate::bus::{Signal, Bus};
+use crate::component::{Component, In, Out};
+use crate::delay::Delay;
+
 use std::rc::Rc;
 use std::cell::RefCell;
 
@@ -19,7 +23,7 @@ pub struct ProbeOutput {
 
 impl ProbeInput {
     pub fn new() -> Rc<RefCell<Self>> {
-        Rc::from(RefCell::from(ProbeInput{value: Signal::HIGH, out: Out::new(0)}))
+        Rc::from(RefCell::from(ProbeInput{value: Signal::HIGH, out: Out::new(1)}))
     }
 
     pub fn set(&mut self, value: Signal) {
@@ -40,7 +44,7 @@ impl Component for ProbeInput {
 
 impl ProbeOutput {
     pub fn new() -> Rc<RefCell<Self>> {
-        Rc::from(RefCell::from(ProbeOutput{value: Signal::HIGH, input: In::new(0)}))
+        Rc::from(RefCell::from(ProbeOutput{value: Signal::HIGH, input: In::new(1)}))
     }
 
     pub fn get(&self) -> Signal {
@@ -70,6 +74,63 @@ impl Tester {
             outputs.push(ProbeOutput::new())
         }
         Tester{inputs, outputs}
+    }
+
+    pub fn from(
+        inputs: &[usize],
+        outputs: &[usize],
+        component: Rc<RefCell<dyn Component>>,
+        component_size: usize
+    ) -> (Self, CompleteBoard) {
+        // create the board
+        let mut board = Board::new();
+
+        // create the sockets on the board
+        let mut socket_inputs = Vec::new();
+        let mut socket_outputs = Vec::new();
+
+        for i in 0..inputs.len() {
+            let socket = board.socket(1);
+            socket.pin(1).name(&format!("in{}", i));
+            socket_inputs.push(socket);
+        }
+
+        for i in 0..outputs.len() {
+            let socket = board.socket(1);
+            socket.pin(1).name(&format!("out{}", i));
+            socket_outputs.push(socket);
+        }
+
+        let component_socket = board.socket(component_size);
+
+        // wire the socket together
+        for (i, socket) in socket_inputs.iter_mut().enumerate() {
+            socket.pin(1).connect(&component_socket.pin(inputs[i]));
+        }
+        for (i, socket) in socket_outputs.iter_mut().enumerate() {
+            socket.pin(1).connect(&component_socket.pin(outputs[i]));
+        }
+
+        // Wire the board: no more connection allowed
+        let mut board = board.wire();
+
+        // plug component
+        board.plug(component).into(component_socket);
+
+        // Create tester + probes
+        let tester = Tester::new(inputs.len(), outputs.len());
+        for i in 0..inputs.len() {
+            let input = tester.input(i);
+            let input_socket = socket_inputs.remove(0);
+            board.plug(input).into(input_socket);
+        }
+        for i in 0..outputs.len() {
+            let output = tester.output(i);
+            let output_socket = socket_outputs.remove(0);
+            board.plug(output).into(output_socket);
+        }
+
+        (tester, board.complete())
     }
 
     pub fn input(&self, input_id: usize) -> Rc<RefCell<ProbeInput>> {

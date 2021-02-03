@@ -1,10 +1,16 @@
 [package]
-name = "caemu-6809"
+name = "caemu-macro"
 version = "0.1.0"
 authors = ["Jean-Baptiste Wons <wonsjb@gmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[lib]
+proc-macro = true
+
 [dependencies]
-caemu = { path = "../caemu" }
+syn = { version = "1.0", features = ["full"] }
+quote = "1.0"
+Inflector = "0.11"
+proc-macro2 = "1.0"

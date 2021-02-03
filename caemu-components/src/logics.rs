@@ -1,123 +1,147 @@
-use caemu::board::{Component, Signal, Bus, Delay, In, Out};
+use caemu::component::{Component, In, InBus, OutBus};
+use caemu::delay::Delay;
+use caemu::bus::{Bus};
 
 use std::rc::Rc;
 use std::cell::RefCell;
 
-pub struct Nand {
-    in1: In,
-    in2: In,
-    out: Out
+pub struct SN74LS00N {
+    a: InBus,
+    b: InBus,
+    y: OutBus,
+    gnd: In,
+    vcc: In
 }
 
-impl Nand {
-    pub fn new () -> Rc<RefCell<Nand>> {
-        Rc::new(RefCell::new(Nand{in1: In::new(0), in2: In::new(1), out: Out::new(2)}))
+impl SN74LS00N {
+    pub fn new () -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self{
+            a: InBus::new(&[1, 4, 10, 13]),
+            b: InBus::new(&[2, 5, 9, 12]),
+            y: OutBus::new(&[3, 6, 8, 11]),
+            gnd: In::new(7),
+            vcc: In::new(14)}))
     }
 }
 
-impl Component for Nand {
+impl Component for SN74LS00N {
     fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.in1.connect(bus.clone());
-        self.in2.connect(bus.clone());
-        self.out.connect(bus);
+        self.a.connect(bus.clone());
+        self.b.connect(bus.clone());
+        self.y.connect(bus.clone());
+        self.gnd.connect(bus.clone());
+        self.vcc.connect(bus);
     }
 
     fn eval(&mut self) -> Delay {
-        self.out.set(match (self.in1.get(), self.in2.get()) {
-                (Signal::ONE, Signal::ONE) => Signal::ZERO,
-                (Signal::ZERO, _) | (_, Signal::ZERO) => Signal::ONE,
-                _ => Signal::HIGH
-        });
-        Delay::from_picos(100)
+        let a = self.a.get_u8();
+        let b = self.b.get_u8();
+        self.y.set_u8(!(a&b));
+        Delay::from_nanos(15)
     }
 }
 
-pub struct Not {
-    input: In,
-    out: Out
+pub struct SN74LS04N {
+    a: InBus,
+    y: OutBus,
+    gnd: In,
+    vcc: In
 }
 
-impl Not {
-    pub fn new () -> Rc<RefCell<Not>> {
-        Rc::new(RefCell::new(Not{input: In::new(0), out: Out::new(1)}))
+impl SN74LS04N {
+    pub fn new () -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self{
+            a: InBus::new(&[1, 3, 5, 9, 11, 13]),
+            y: OutBus::new(&[2, 4, 6, 8, 10, 12]),
+            gnd: In::new(7),
+            vcc: In::new(14)}))
     }
 }
 
-impl Component for Not {
+impl Component for SN74LS04N {
     fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.input.connect(bus.clone());
-        self.out.connect(bus);
+        self.a.connect(bus.clone());
+        self.y.connect(bus.clone());
+        self.gnd.connect(bus.clone());
+        self.vcc.connect(bus);
     }
 
     fn eval(&mut self) -> Delay {
-        self.out.set(match self.input.get() {
-                Signal::ONE => Signal::ZERO,
-                Signal::ZERO => Signal::ONE,
-                _ => Signal::HIGH
-        });
-        Delay::from_picos(40)
+        let a = self.a.get_u8();
+        println!("a: {} not a: {}", a, !a);
+        self.y.set_u8(!a);
+        Delay::from_nanos(22)
     }
 }
 
+
+pub struct HC138 {
+    a: InBus,
+    e: InBus,
+    y: OutBus,
+    gnd: In,
+    vcc: In
+}
+
+impl HC138 {
+    pub fn new () -> Rc<RefCell<Self>> {
+        Rc::new(RefCell::new(Self{
+            a: InBus::new(&[1, 2, 3]),
+            e: InBus::new(&[4, 5, 6]),
+            y: OutBus::new(&[15, 14, 13, 12, 11, 10, 9, 7]),
+            gnd: In::new(8),
+            vcc: In::new(16)}))
+    }
+}
+
+impl Component for HC138 {
+    fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
+        self.a.connect(bus.clone());
+        self.e.connect(bus.clone());
+        self.y.connect(bus.clone());
+        self.gnd.connect(bus.clone());
+        self.vcc.connect(bus);
+    }
+
+    fn eval(&mut self) -> Delay {
+        let enable = self.e.get_u8();
+        if enable != 4 {
+            self.y.set_u8(0);
+        } else {
+            let a = self.a.get_u8();
+            let y = 1 << a;
+            self.y.set_u8(y);
+        }
+        Delay::from_nanos(53)
+    }
+}
 
 
 #[cfg(test)]
 mod tests {
-    use caemu::board::{Board, Signal};
     use caemu::tester::Tester;
+    use caemu::bus::Signal;
     use crate::logics::*;
 
     #[test]
     fn nand_test() {
-        // create the board
-        let mut board = Board::new();
-
-        // create the sockets on the board
-        let socket_input1 = board.socket(1);
-        let socket_input2 = board.socket(1);
-        let socket_nand = board.socket(3);
-
-        let socket_not_1 = board.socket(2);
-        let socket_not_2 = board.socket(2);
-
-        let socket_output = board.socket(1);
-
-        // wire the socket together
-        socket_input1.pin(0).connect(&socket_nand.pin(0));
-        socket_input2.pin(0).connect(&socket_nand.pin(1));
-        socket_nand.pin(2).connect(&socket_not_1.pin(0));
-        socket_not_1.pin(1).connect(&socket_not_2.pin(0));
-        socket_output.pin(0).connect(&socket_not_2.pin(1));
-
-        // Wire the board: no more connection allowed
-        let mut board = board.wire();
-
-        // create components
-        let nand = Nand::new();
-        let not_1 = Not::new();
-        let not_2 = Not::new();
-
-        // Create tester + probes
-        let mut tester = Tester::new(2, 1);
-        let probe_input1 = tester.input(0);
-        let probe_input2 = tester.input(1);
-        let probe_output = tester.output(0);
-
-        // plug components / probes onto sockets
-        board.plug(probe_input1).into(socket_input1);
-        board.plug(probe_input2).into(socket_input2);
-        board.plug(nand).into(socket_nand);
-        board.plug(not_1).into(socket_not_1);
-        board.plug(not_2).into(socket_not_2);
-        board.plug(probe_output).into(socket_output);
-
-        // complete the board, no plug allowed
-        let mut board = board.complete();
+        // wrap a nand
+        let (mut tester, mut board) = Tester::from(&[1, 2], &[3], SN74LS00N::new(), 14);
 
         // test few cases
         tester.test(&mut board, vec![Signal::ZERO, Signal::ZERO], vec![Signal::ONE]);
         tester.test(&mut board, vec![Signal::ZERO, Signal::ONE], vec![Signal::ONE]);
         tester.test(&mut board, vec![Signal::ONE, Signal::ZERO], vec![Signal::ONE]);
         tester.test(&mut board, vec![Signal::ONE, Signal::ONE], vec![Signal::ZERO]);
+    }
+
+    #[test]
+    fn not_test() {
+        // wrap a nand
+        let (mut tester, mut board) = Tester::from(&[1], &[2], SN74LS04N::new(), 14);
+
+        // test few cases
+        tester.test(&mut board, vec![Signal::ZERO], vec![Signal::ONE]);
+        tester.test(&mut board, vec![Signal::ONE], vec![Signal::ZERO]);
     }
 }

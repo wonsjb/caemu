@@ -1,9 +1,13 @@
 pub mod board;
 pub mod tester;
+pub mod component;
+pub mod delay;
+pub mod bus;
+pub mod logger;
 
 #[cfg(test)]
 mod tests {
-    use crate::board::{Delay};
+    use crate::delay::{Delay};
 
     #[test]
     fn delays_test() {

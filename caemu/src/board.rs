@@ -1,7 +1,9 @@
 use std::rc::Rc;
-use std::cell::{Ref, RefCell};
-
-use std::time::Instant;
+use std::cell::{RefCell};
+use crate::delay::Delay;
+use crate::component::Component;
+use crate::bus::{Bus, Signal, IOAction};
+use crate::logger::Logger;
 
 use petgraph::Graph;
 use petgraph::algo::tarjan_scc;
@@ -39,71 +41,9 @@ pub struct Pin {
     names: Rc<RefCell<HashMap<usize, String>>>
 }
 
-enum IOAction {
-    None,
-    IO(Signal)
-}
-
-pub struct Bus{
-    ids: Vec<usize>,
-    read: RefCell<Vec<IOAction>>,
-    output: Vec<IOAction>,
-    all_signals: Rc<RefCell<Vec<Signal>>>,
-    raised: Rc<RefCell<Vec<bool>>>
-}
-
-impl Bus {
-
-    pub fn get(&self, index: usize) -> Signal {
-        let res = self.all_signals.borrow()[self.ids[index]];
-        self.read.borrow_mut()[index] = IOAction::IO(res);
-        res
-    }
-
-    pub fn raised(&self, index: usize) -> bool {
-        let res = self.all_signals.borrow()[self.ids[index]];
-        self.read.borrow_mut()[index] = IOAction::IO(res);
-        return self.raised.borrow()[self.ids[index]];
-    }
-
-    pub fn set(&mut self, index: usize, signal: Signal) {
-        self.output[index] = IOAction::IO(signal);
-    }
-
-    pub fn is_dirty(&self) -> bool {
-        let all_signals = self.all_signals.borrow();
-        for (pos, read) in self.read.borrow().iter().enumerate() {
-            if let IOAction::IO(signal) = read {
-                let signal_pos = self.ids[pos];
-                if *signal != all_signals[signal_pos] {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    pub fn clear(&mut self) {
-        for i in self.read.borrow_mut().iter_mut() {
-            *i = IOAction::None
-        }
-        for i in self.output.iter_mut() {
-            *i = IOAction::None
-        }
-    }
-
-    pub fn apply(&mut self) {
-        let mut all_signals = self.all_signals.borrow_mut();
-        let mut raised = self.raised.borrow_mut();
-        for (pos, id) in self.ids.iter().enumerate() {
-            if let IOAction::IO(signal) = self.output[pos] {
-                if all_signals[*id] == Signal::ZERO && signal == Signal::ONE {
-                    raised[*id] = true;
-                }
-                all_signals[*id] = signal;
-            }
-        }
-    }
+pub struct FastConnector<'a> {
+    socket1: &'a Socket,
+    socket2: &'a Socket
 }
 
 struct WiredComponent {
@@ -205,57 +145,6 @@ impl <'a> BoardComponent<'a> {
     }
 }
 
-pub struct Logger {
-    previous: Vec<Signal>
-}
-
-impl Logger {
-    pub fn new(len: usize, names: Ref<HashMap<usize, String>>) -> Self {
-        println!("$date {:?} $end", Instant::now());
-        println!("$version caemu 0.0.1 $end");
-        println!("$comment");
-        println!("   Caemu simulation logger");
-        println!("$end");
-        println!("$timescale 1 ps $end");
-        println!("$scope module caemu $end");
-        let mut previous = Vec::new();
-        for i in 0..len {
-            let name_format = match names.get(&i) {
-                None => format!("B{}", i),
-                Some(name) => format!("{}", name)
-            };
-            println!("$var wire 1 B{} {} $end", i, name_format);
-            previous.push(Signal::HIGH);
-        }
-        println!("$upscope $end");
-        println!("$enddefinitions $end");
-
-        Logger {previous}
-    }
-
-    fn log(&mut self, bus: &Vec<Signal>, current_time: &Delay) {
-        let mut has_started = false;
-        for (i, s) in bus.iter().enumerate() {
-            if *s != self.previous[i] {
-                let value = match s {
-                    Signal::ONE => "1",
-                    Signal::ZERO => "0",
-                    Signal::HIGH => "x",
-                };
-                if !has_started {
-                    print!("#{}", current_time.picoseconds);
-                    has_started = true;
-                }
-                print!(" {}B{}", value, i);
-                self.previous[i] = *s;
-            }
-        }
-        if has_started {
-            println!();
-        }
-    }
-}
-
 pub struct CompleteBoard {
     components: Vec<WiredComponent>,
     all_signals: Rc<RefCell<Vec<Signal>>>,
@@ -333,7 +222,19 @@ impl WiredBoard {
 
 impl Socket {
     pub fn pin(&self, pin: usize) -> Pin {
-        Pin {id: self.location + pin, names: self.names.clone(), connections: self.connections.clone()}
+        Pin {id: self.location + pin - 1, names: self.names.clone(), connections: self.connections.clone()}
+    }
+
+    pub fn to<'a>(&'a self, other: &'a Socket) -> FastConnector<'a> {
+        FastConnector{socket1: self, socket2: other}
+    }
+}
+
+impl <'a> FastConnector<'a> {
+    pub fn connect(&self, from_ids: &[usize], to_ids: &[usize]) {
+        for (from, to) in from_ids.iter().zip(to_ids) {
+            self.socket1.pin(*from).connect(&self.socket2.pin(*to));
+        }
     }
 }
 
@@ -344,103 +245,5 @@ impl Pin {
 
     pub fn name(&self, name: &str) {
         self.names.borrow_mut().insert(self.id, String::from(name));
-    }
-}
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub enum Signal {
-    ZERO,
-    ONE,
-    HIGH
-}
-
-pub trait Component {
-    fn eval(&mut self) -> Delay;
-
-    fn connect(&mut self, bus: Rc<RefCell<Bus>>);
-}
-
-#[derive(PartialEq, Eq, Debug, PartialOrd, Ord, Copy, Clone)]
-pub struct Delay {
-    picoseconds: u64
-}
-
-impl Delay {
-
-    pub fn plus(&self, other: &Self) -> Self {
-        Delay { picoseconds: self.picoseconds + other.picoseconds }
-    }
-
-    pub fn no_delay() -> Self {
-        Delay { picoseconds: 0 }
-    }
-
-    pub fn from_picos(pico: u64) -> Self {
-        Delay { picoseconds: pico}       
-    }
-
-    pub fn from_nanos(nanos: u64) -> Self {
-        Delay { picoseconds: nanos * 1000}       
-    }
-
-    pub fn from_micros(micros: u64) -> Self {
-        Delay { picoseconds: micros * 1_000_000}       
-    }
-
-    pub fn from_millis(millis: u64) -> Self {
-        Delay { picoseconds: millis * 1_000_000_000}       
-    }
-
-    pub fn from_seconds(seconds: u64) -> Self {
-        Delay { picoseconds: seconds * 1_000_000_000_000}
-    }
-}
-
-pub struct In {
-    id: usize,
-    bus: Option<Rc<RefCell<Bus>>>
-}
-
-pub struct Out {
-    id: usize,
-    bus: Option<Rc<RefCell<Bus>>>
-}
-
-impl In {
-    pub fn new(id: usize) -> Self {
-        In {id, bus: None}
-    }
-
-    pub fn get(&self) -> Signal {
-        match &self.bus {
-            Some(bus) => bus.borrow().get(self.id),
-            None => Signal::HIGH
-        }      
-    }
-
-    pub fn raised(&self) -> bool {
-        match &self.bus {
-            Some(bus) => bus.borrow().raised(self.id),
-            None => false
-        }
-    }
-
-    pub fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.bus = Some(bus)
-    }
-}
-
-impl Out {
-    pub fn new(id: usize) -> Self {
-        Out {id, bus: None}
-    }
-    pub fn set(&mut self, signal: Signal) {
-        if let Some(bus) = &self.bus {
-            bus.borrow_mut().set(self.id, signal);
-        }
-    }
-
-    pub fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.bus = Some(bus)
     }
 }

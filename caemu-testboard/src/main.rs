@@ -1,6 +1,10 @@
 use caemu::board::*;
+use caemu::bus::*;
+use caemu::delay::*;
 use caemu_components::logics::*;
 use caemu::tester::*;
+
+// Test board, using a 6809 CPU, RAM (data), ROM (code) and a terminal
 
 fn main() {
     // create the board
@@ -32,9 +36,9 @@ fn main() {
     let mut board = board.wire();
 
     // create components
-    let nand = Nand::new();
-    let not_1 = Not::new();
-    let not_2 = Not::new();
+    let nand = SN74LS00N::new();
+    let not_1 = SN74LS04N::new();
+    let not_2 = SN74LS04N::new();
 
     // Create probes
     let probe_input1 = ProbeInput::new();

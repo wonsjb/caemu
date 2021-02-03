@@ -2,6 +2,7 @@
 
 members = [
     "caemu",
+    "caemu-macro",
     "caemu-6809",
     "caemu-misc",
     "caemu-mo5",
