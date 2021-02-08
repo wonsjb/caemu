@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 caemu = { path = "../caemu" }
 caemu-components = { path = "../caemu-components" }
+caemu-8bitcpus = { path = "../caemu-8bitcpus" }

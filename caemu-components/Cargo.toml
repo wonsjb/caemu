@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 caemu = { path = "../caemu" }
+caemu-macro = { path = "../caemu-macro" }

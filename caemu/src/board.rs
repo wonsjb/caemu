@@ -41,9 +41,9 @@ pub struct Pin {
     names: Rc<RefCell<HashMap<usize, String>>>
 }
 
-pub struct FastConnector<'a> {
-    socket1: &'a Socket,
-    socket2: &'a Socket
+pub struct Pins {
+    ids: Vec<usize>,
+    connections: Rc<RefCell<Vec<Connection>>>,
 }
 
 struct WiredComponent {
@@ -225,16 +225,12 @@ impl Socket {
         Pin {id: self.location + pin - 1, names: self.names.clone(), connections: self.connections.clone()}
     }
 
-    pub fn to<'a>(&'a self, other: &'a Socket) -> FastConnector<'a> {
-        FastConnector{socket1: self, socket2: other}
-    }
-}
-
-impl <'a> FastConnector<'a> {
-    pub fn connect(&self, from_ids: &[usize], to_ids: &[usize]) {
-        for (from, to) in from_ids.iter().zip(to_ids) {
-            self.socket1.pin(*from).connect(&self.socket2.pin(*to));
+    pub fn pins(&self, pins: &[usize]) -> Pins {
+        let mut pins_vec = Vec::new();
+        for i in pins {
+            pins_vec.push(self.location + i);
         }
+        Pins {ids: pins_vec, connections: self.connections.clone()}
     }
 }
 
@@ -246,4 +242,13 @@ impl Pin {
     pub fn name(&self, name: &str) {
         self.names.borrow_mut().insert(self.id, String::from(name));
     }
+}
+
+impl Pins {
+    pub fn connect(&self, other: &Pins) -> &Self {
+        for (from, to) in self.ids.iter().zip(&other.ids) {
+            self.connections.borrow_mut().push(Connection{from: *from, to: *to});
+        }
+        self
+    }  
 }

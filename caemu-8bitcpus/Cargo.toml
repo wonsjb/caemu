@@ -1,5 +1,5 @@
 [package]
-name = "caemu-6809"
+name = "caemu-8bitcpus"
 version = "0.1.0"
 authors = ["Jean-Baptiste Wons <wonsjb@gmail.com>"]
 edition = "2018"
@@ -8,3 +8,4 @@ edition = "2018"
 
 [dependencies]
 caemu = { path = "../caemu" }
+caemu-macro = { path = "../caemu-macro" }

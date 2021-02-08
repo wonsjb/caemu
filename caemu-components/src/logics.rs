@@ -1,36 +1,23 @@
 use caemu::component::{Component, In, InBus, OutBus};
 use caemu::delay::Delay;
 use caemu::bus::{Bus};
+use caemu_macro::comp;
 
 use std::rc::Rc;
 use std::cell::RefCell;
 
+#[comp]
 pub struct SN74LS00N {
-    a: InBus,
-    b: InBus,
-    y: OutBus,
-    gnd: In,
-    vcc: In
-}
-
-impl SN74LS00N {
-    pub fn new () -> Rc<RefCell<Self>> {
-        Rc::new(RefCell::new(Self{
-            a: InBus::new(&[1, 4, 10, 13]),
-            b: InBus::new(&[2, 5, 9, 12]),
-            y: OutBus::new(&[3, 6, 8, 11]),
-            gnd: In::new(7),
-            vcc: In::new(14)}))
-    }
+    a: In<1, 4, 10, 13>,
+    b: In<2, 5, 9, 12>,
+    y: Out<3, 6, 8, 11>,
+    gnd: In<7>,
+    vcc: In<14>
 }
 
 impl Component for SN74LS00N {
     fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.a.connect(bus.clone());
-        self.b.connect(bus.clone());
-        self.y.connect(bus.clone());
-        self.gnd.connect(bus.clone());
-        self.vcc.connect(bus);
+        self.connect_impl(bus);
     }
 
     fn eval(&mut self) -> Delay {
@@ -41,29 +28,17 @@ impl Component for SN74LS00N {
     }
 }
 
+#[comp]
 pub struct SN74LS04N {
-    a: InBus,
-    y: OutBus,
-    gnd: In,
-    vcc: In
-}
-
-impl SN74LS04N {
-    pub fn new () -> Rc<RefCell<Self>> {
-        Rc::new(RefCell::new(Self{
-            a: InBus::new(&[1, 3, 5, 9, 11, 13]),
-            y: OutBus::new(&[2, 4, 6, 8, 10, 12]),
-            gnd: In::new(7),
-            vcc: In::new(14)}))
-    }
+    a: In<1, 3, 5, 9, 11, 13>,
+    y: Out<2, 4, 6, 8, 10, 12>,
+    gnd: In<7>,
+    vcc: In<14>
 }
 
 impl Component for SN74LS04N {
     fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.a.connect(bus.clone());
-        self.y.connect(bus.clone());
-        self.gnd.connect(bus.clone());
-        self.vcc.connect(bus);
+        self.connect_impl(bus);
     }
 
     fn eval(&mut self) -> Delay {
@@ -74,33 +49,18 @@ impl Component for SN74LS04N {
     }
 }
 
-
+#[comp]
 pub struct HC138 {
-    a: InBus,
-    e: InBus,
-    y: OutBus,
-    gnd: In,
-    vcc: In
-}
-
-impl HC138 {
-    pub fn new () -> Rc<RefCell<Self>> {
-        Rc::new(RefCell::new(Self{
-            a: InBus::new(&[1, 2, 3]),
-            e: InBus::new(&[4, 5, 6]),
-            y: OutBus::new(&[15, 14, 13, 12, 11, 10, 9, 7]),
-            gnd: In::new(8),
-            vcc: In::new(16)}))
-    }
+    a: In<1, 2, 3>,
+    e: In<5, 5, 6>,
+    y: Out<15, 14, 13, 12, 11, 10, 9, 7>,
+    gnd: In<8>,
+    vcc: In<16>
 }
 
 impl Component for HC138 {
     fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.a.connect(bus.clone());
-        self.e.connect(bus.clone());
-        self.y.connect(bus.clone());
-        self.gnd.connect(bus.clone());
-        self.vcc.connect(bus);
+        self.connect_impl(bus);
     }
 
     fn eval(&mut self) -> Delay {

@@ -3,7 +3,7 @@
 members = [
     "caemu",
     "caemu-macro",
-    "caemu-6809",
+    "caemu-8bitcpus",
     "caemu-misc",
     "caemu-mo5",
     "caemu-components",
