@@ -44,7 +44,7 @@ impl Component for SN74LS04N {
 #[comp]
 pub struct HC138 {
     a: In<1, 2, 3>,
-    e: In<5, 5, 6>,
+    e: In<4, 5, 6>,
     y: Out<15, 14, 13, 12, 11, 10, 9, 7>,
     gnd: In<8>,
     vcc: In<16>

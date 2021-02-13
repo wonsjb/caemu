@@ -10,6 +10,7 @@ pub trait Component {
 
 pub trait Connect {
     fn connect(&mut self, bus: Rc<RefCell<Bus>>);
+    fn get_name(&self, id: usize) -> String;
 }
 
 

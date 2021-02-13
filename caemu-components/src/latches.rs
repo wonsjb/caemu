@@ -38,9 +38,7 @@ impl Component for SN74LS77 {
             self.q.set(1, self.d.get(1));
             state.mem[0] = self.d.get(0);
             state.mem[1] = self.d.get(1); 
-            println!("Saving {:?} {:?}", state.mem[0], state.mem[1]);
         } else {
-            println!("Loading {:?} {:?}", state.mem[0], state.mem[1]);
             self.q.set(0, state.mem[0]);
             self.q.set(1, state.mem[1]);
         }

@@ -136,6 +136,7 @@ impl <'a, T: Component + Connect> BoardComponent<'a, T> {
             inputs.push(self.board.id_to_wire[socket.location + i]);
             read.push(IOAction::None);
             output.push(IOAction::None);
+            socket.pin(i+1).name(&self.component.borrow().get_name(i + 1));
         }
         let bus = Rc::from(RefCell::from(Bus{ids: inputs, read: RefCell::from(read), output,
             raised: self.board.raised.clone(),

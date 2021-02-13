@@ -35,6 +35,10 @@ impl Connect for ProbeInput {
     fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
         self.out.connect(bus);
     }
+
+    fn get_name(&self, id: usize) -> String {
+        format!("i{}", id)
+    }
 }
 
 impl Component for ProbeInput {
@@ -57,6 +61,10 @@ impl ProbeOutput {
 impl Connect for ProbeOutput {
     fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
         self.input.connect(bus);
+    }
+
+    fn get_name(&self, id: usize) -> String {
+        format!("o{}", id)
     }
 }
 

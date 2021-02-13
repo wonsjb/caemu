@@ -1,31 +1,16 @@
-use caemu::component::{Component, In, InBus, Connect};
+use caemu::component::{Component, In, InBus};
 use caemu::bus::{Bus, Signal};
 use caemu::delay::Delay;
+use caemu_macro::comp;
 
 use std::rc::Rc;
 use std::cell::RefCell;
 
+#[comp]
 pub struct Terminal {
-    d: InBus,
-    we: In,
-    ce: In
-}
-
-impl Terminal {
-    pub fn new () -> Rc<RefCell<Self>> {
-        Rc::new(RefCell::new(Self{
-            d: InBus::new(&[1, 2, 3, 4, 5, 6, 7, 8]),
-            we: In::new(9),
-            ce: In::new(10)}))
-    }
-}
-
-impl Connect for Terminal {
-    fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.d.connect(bus.clone());
-        self.we.connect(bus.clone());
-        self.ce.connect(bus.clone());
-    }
+    d: In<1, 2, 3, 4, 5, 6, 7, 8>,
+    we: In<9>,
+    ce: In<10>
 }
 
 impl Component for Terminal {

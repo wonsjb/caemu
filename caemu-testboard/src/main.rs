@@ -19,14 +19,16 @@ fn main() {
     let ram = AS6C62256::new();
     let ram_pins = ram.borrow().get_pins();
     let demux = HC138::new();
+    let demux_pins = demux.borrow().get_pins();
     let terminal = Terminal::new();
+    let terminal_pins = terminal.borrow().get_pins();
 
     // create the sockets on the board
-    let socket_rom = board.socket(28);
-    let socket_ram = board.socket(28);
-    let socket_cpu = board.socket(40);
-    let socket_terminal = board.socket(10);
-    let socket_demux = board.socket(16);
+    let socket_rom = board.socket(rom_pins.len());
+    let socket_ram = board.socket(ram_pins.len());
+    let socket_cpu = board.socket(cpu_pins.len());
+    let socket_terminal = board.socket(terminal_pins.len());
+    let socket_demux = board.socket(demux_pins.len());
 
     // connections
     socket_cpu.pins(&cpu_pins.a)

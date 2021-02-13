@@ -90,21 +90,34 @@ fn make_comp(ast: syn::ItemStruct) -> TokenStream {
     let mut connects = Vec::new();
     let mut pins_desc = Vec::new();
     let mut pins_create = Vec::new();
+    let mut total_pin_count: usize = 0;
+    let mut get_names = Vec::new();
 
     for desc in descs {
         let name = desc.name;
         let kind = desc.kind;
         pins.push(quote!(#name: #kind));
+        total_pin_count += desc.pins.len();
         if desc.pins.len() == 1 {
             let pin = &desc.pins[0];
             news.push(quote!(
                 #name: #kind::new(#pin)
-            ))
+            ));
+            let str_name = format!("{}", name);
+            get_names.push(quote!(
+                #pin => #str_name
+            ));
         } else {
             let pins = &desc.pins;
             news.push(quote!(
                 #name: #kind::new(&[#(#pins,)*])
-            ))
+            ));
+            for (i, pin) in pins.iter().enumerate() {
+                let str_name = format!("{}{}", name, i);
+                get_names.push(quote!(
+                    #pin => #str_name
+                ));
+            }
         }
         connects.push(quote!(
             self.#name.connect(bus.clone())
@@ -139,9 +152,21 @@ fn make_comp(ast: syn::ItemStruct) -> TokenStream {
             #(#pins_desc,)*
         }
 
+        impl #name_pin {
+            pub fn len(&self) -> usize {
+                #total_pin_count
+            }
+        }
+
         impl caemu::component::Connect for #struct_name {
             fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
                 #(#connects;)*
+            }
+            fn get_name(&self, id: usize) -> String {
+                String::from(match id {
+                    #(#get_names,)*
+                    _ => panic!("Unknown pin id {}", id)
+                })
             }
         }
 

@@ -6,6 +6,22 @@ use caemu_macro::comp;
 use std::rc::Rc;
 use std::cell::RefCell;
 
+#[derive(Default)]
+struct State {
+    pc: u16,
+    sp: u8,
+    acc: u8,
+    x: u8,
+    y: u8,
+    ps: u8
+}
+
+impl State {
+    fn new() -> Self {
+        Self::default()
+    }
+}
+
 #[comp]
 pub struct CPU6502 {
     vss: In<1, 21>,
@@ -21,11 +37,22 @@ pub struct CPU6502 {
     halt: In<35>,
     rw: Out<36>,
     s0: In<38>,
-    rst: In<40>
+    rst: In<40>,
+
+    state: State
 }
 
 impl Component for CPU6502 {
     fn eval(&mut self) -> Delay {
+
+        // Dummy impl
+        self.state.acc += 1;
+        self.state.pc += 1;
+        self.state.x += 1;
+        self.state.y += 1;
+        self.state.sp += 1;
+        self.state.ps += 1;
+
         Delay::from_micros(1)
     }
 }
