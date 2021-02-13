@@ -42,9 +42,6 @@ pub struct AT28C256 {
 }
 
 impl Component for AT28C256 {
-    fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.connect_impl(bus);
-    }
 
     fn eval(&mut self) -> Delay {
         if self.ce.get() == Signal::ONE || self.oe.get() == Signal::ONE {
@@ -84,9 +81,6 @@ pub struct AS6C62256 {
 }
 
 impl Component for AS6C62256 {
-    fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.connect_impl(bus);
-    }
 
     fn eval(&mut self) -> Delay {
         if self.ce.get() == Signal::ONE {

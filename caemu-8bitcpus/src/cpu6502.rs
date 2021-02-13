@@ -25,10 +25,6 @@ pub struct CPU6502 {
 }
 
 impl Component for CPU6502 {
-    fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.connect_impl(bus);
-    }
-
     fn eval(&mut self) -> Delay {
         Delay::from_micros(1)
     }

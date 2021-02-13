@@ -29,10 +29,6 @@ pub struct CPU6809 {
 }
 
 impl Component for CPU6809 {
-    fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.connect_impl(bus);
-    }
-
     fn eval(&mut self) -> Delay {
         Delay::from_nanos(250)
     }

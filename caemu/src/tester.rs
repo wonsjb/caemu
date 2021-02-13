@@ -1,6 +1,6 @@
 use crate::board::{Board, CompleteBoard};
 use crate::bus::{Signal, Bus};
-use crate::component::{Component, In, Out};
+use crate::component::{Component, In, Out, Connect};
 use crate::delay::Delay;
 
 use std::rc::Rc;
@@ -31,11 +31,13 @@ impl ProbeInput {
     }
 }
 
-impl Component for ProbeInput {
+impl Connect for ProbeInput {
     fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
         self.out.connect(bus);
     }
+}
 
+impl Component for ProbeInput {
     fn eval(&mut self) -> Delay {
         self.out.set(self.value);
         Delay::no_delay()
@@ -52,10 +54,14 @@ impl ProbeOutput {
     }
 }
 
-impl Component for ProbeOutput {
+impl Connect for ProbeOutput {
     fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
         self.input.connect(bus);
     }
+}
+
+impl Component for ProbeOutput {
+
 
     fn eval(&mut self) -> Delay {
         self.value = self.input.get();
@@ -76,10 +82,10 @@ impl Tester {
         Tester{inputs, outputs}
     }
 
-    pub fn from(
+    pub fn from <T: Component + Connect + 'static> (
         inputs: &[usize],
         outputs: &[usize],
-        component: Rc<RefCell<dyn Component>>,
+        component: Rc<RefCell<T>>,
         component_size: usize
     ) -> (Self, CompleteBoard) {
         // create the board

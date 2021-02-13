@@ -1,7 +1,7 @@
 use std::rc::Rc;
 use std::cell::{RefCell};
 use crate::delay::Delay;
-use crate::component::Component;
+use crate::component::{Component, Connect};
 use crate::bus::{Bus, Signal, IOAction};
 use crate::logger::Logger;
 
@@ -121,12 +121,12 @@ impl Board {
     }
 }
 
-pub struct BoardComponent<'a> {
-    component: Rc<RefCell<dyn Component>>,
+pub struct BoardComponent<'a, T: Component + Connect + 'static> {
+    component: Rc<RefCell<T>>,
     board: &'a mut WiredBoard
 }
 
-impl <'a> BoardComponent<'a> {
+impl <'a, T: Component + Connect> BoardComponent<'a, T> {
     pub fn into(self, mut socket: Socket) {
         socket.component = Some(self.component.clone());
         let mut inputs = Vec::new();
@@ -204,7 +204,7 @@ impl CompleteBoard {
 }
 
 impl WiredBoard {
-    pub fn plug<'a>(&'a mut self, component: Rc<RefCell<dyn Component>>) -> BoardComponent<'a> {
+    pub fn plug<'a, T: Component + Connect>(&'a mut self, component: Rc<RefCell<T>>) -> BoardComponent<'a, T> {
         BoardComponent{component, board: self}
     }
 

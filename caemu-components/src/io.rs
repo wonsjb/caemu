@@ -1,4 +1,4 @@
-use caemu::component::{Component, In, InBus};
+use caemu::component::{Component, In, InBus, Connect};
 use caemu::bus::{Bus, Signal};
 use caemu::delay::Delay;
 
@@ -20,12 +20,15 @@ impl Terminal {
     }
 }
 
-impl Component for Terminal {
+impl Connect for Terminal {
     fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
         self.d.connect(bus.clone());
         self.we.connect(bus.clone());
         self.ce.connect(bus.clone());
     }
+}
+
+impl Component for Terminal {
 
     fn eval(&mut self) -> Delay {
         if self.ce.get() == Signal::ZERO && self.we.raised() {

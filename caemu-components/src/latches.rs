@@ -31,10 +31,6 @@ pub struct SN74LS77 {
 }
 
 impl Component for SN74LS77 {
-    fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.connect_impl(bus);
-    }
-
     fn eval(&mut self) -> Delay {
         let state = &mut self.state;
         if self.c.get(0) == Signal::ONE {

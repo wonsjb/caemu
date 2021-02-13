@@ -139,15 +139,19 @@ fn make_comp(ast: syn::ItemStruct) -> TokenStream {
             #(#pins_desc,)*
         }
 
+        impl caemu::component::Connect for #struct_name {
+            fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
+                #(#connects;)*
+            }
+        }
+
         impl #struct_name {
             pub fn new() -> Rc<RefCell<Self>> {
                 Rc::new(RefCell::new(Self {
                     #(#news,)*
                 }))
             }
-            pub fn connect_impl(&mut self, bus: Rc<RefCell<Bus>>) {
-                #(#connects;)*
-            }
+
             pub fn get_pins(&self) -> #name_pin {
                 #name_pin {
                     #(#pins_create,)*

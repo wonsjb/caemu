@@ -16,10 +16,6 @@ pub struct SN74LS00N {
 }
 
 impl Component for SN74LS00N {
-    fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.connect_impl(bus);
-    }
-
     fn eval(&mut self) -> Delay {
         let a = self.a.get_u8();
         let b = self.b.get_u8();
@@ -37,10 +33,6 @@ pub struct SN74LS04N {
 }
 
 impl Component for SN74LS04N {
-    fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.connect_impl(bus);
-    }
-
     fn eval(&mut self) -> Delay {
         let a = self.a.get_u8();
         println!("a: {} not a: {}", a, !a);
@@ -59,9 +51,6 @@ pub struct HC138 {
 }
 
 impl Component for HC138 {
-    fn connect(&mut self, bus: Rc<RefCell<Bus>>) {
-        self.connect_impl(bus);
-    }
 
     fn eval(&mut self) -> Delay {
         let enable = self.e.get_u8();

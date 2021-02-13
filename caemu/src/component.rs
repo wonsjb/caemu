@@ -6,7 +6,9 @@ use std::cell::RefCell;
 
 pub trait Component {
     fn eval(&mut self) -> Delay;
+}
 
+pub trait Connect {
     fn connect(&mut self, bus: Rc<RefCell<Bus>>);
 }
 
